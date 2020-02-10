@@ -1,13 +1,14 @@
-import json
+# import json
 # from abc import ABC, abstractmethod
+from telebot import types
 from .bot import bot
 
 
 class JsonDeserializable:
 
     # @abstractmethod
-    # @classmethod
-    def de_json(self):
+    @classmethod
+    def de_json(cls, json_type):
         raise NotImplementedError
 
 
@@ -34,24 +35,61 @@ class Task(JsonDeserializable):
 
 
 class Step(JsonDeserializable):
-    def __init__(self, action=None, **kwargs):
-        self.action = action
-        for kwarg in kwargs:
-            self.__dict__[kwarg] = kwargs[kwarg]
-
+    action = None
 
     @classmethod
     def de_json(cls, json_type):
         if not isinstance(json_type, dict):
             raise TypeError("json_type must be an instance of dict")
 
-        return cls(**json_type)
+        raise NotImplementedError
+
+    def do_step(self):
+        pass
 
 
 class SendMessageStep(Step):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.register_handler()
+    """ implements send_message action """
 
-    def register_handler(self):
-        pass
+    action = "send_message"
+
+    def __init__(self, message_text, buttons=None):
+        self.message_text = message_text
+        self.buttons = buttons
+
+    @classmethod
+    def de_json(cls, json_type):
+        if not isinstance(json_type, dict):
+            raise TypeError("json_type must be an instance of dict")
+
+        return cls(json_type["message_text"],
+                   json_type.get("buttons")
+                   )
+
+    def send_message(self, user_id):
+        if self.buttons:
+            keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+            keyboard.add(*self.buttons)
+        else:
+            keyboard = types.ReplyKeyboardRemove()
+
+        message = bot.send_message(user_id, self.message_text, parse_mode="HTML", reply_markup=keyboard)
+        return message
+
+    # def do_step(self):
+
+
+class ReceiveMessageStep(Step):
+    """ implements receive_message action """
+
+    action = "receive_message"
+
+    def __init__(self, text_to_equal):
+        self.text_to_equal = text_to_equal
+
+    @classmethod
+    def de_json(cls, json_type):
+        if not isinstance(json_type, dict):
+            raise TypeError("json_type must be an instance of dict")
+
+        return cls(json_type["text_to_equal"])
