@@ -1,0 +1,20 @@
+{
+    "Task1": {
+        "condition": "Some options",
+        "number": 1,
+        "steps": {
+            "1": {
+                "action": "send_message",
+                "message_text": "Algorithm 1"
+            },
+            "2": {
+                "action": "receive_message",
+                "text_to_equal": "Yes"
+            },
+            "3": {
+                "action": "send_message",
+                "message_text": "The end"
+            }
+        }
+    }
+}
