@@ -4,8 +4,9 @@ from typing import Union
 from telebot import types
 
 from .bot import bot
-from bot import UserStepSaver
+from bot import UserStepSaver, UserTaskSaver
 
+BLOCKING_ACTIONS = ("receive_message")
 
 class JsonDeserializable:
     @classmethod
@@ -17,10 +18,26 @@ class StepsDict(dict):
     ...
 
 
-class Task(JsonDeserializable):
-    objects = {}
+class StepWorker:
+    @staticmethod
+    def do_steps(task, user_id, *args, **kwargs):
+        """ steps execution always start with blocking action """
+        task.do_step(user_id, *args, **kwargs)
+        step = task.steps[task.saver[user_id]]
+        while step.action not in BLOCKING_ACTIONS:
+            task.do_step(user_id, *args, **kwargs)
+            try:
+                step = task.steps[task.saver[user_id]]
+            except KeyError:
+                task.end_task(user_id)
+                break
+        if task.saver[user_id] == "ended":
+            user_task = UserTaskSaver()
+            del user_task[user_id]
 
-    def __init__(self, title: str, condition: str, number: int, steps: Union[StepsDict, dict]) -> None:
+
+class Task(JsonDeserializable):
+    def __init__(self, title: str, condition: str, number: int, steps: Union[StepsDict, dict, None]) -> None:
         self.title = title
         self.condition = condition
         self.number = number
@@ -30,9 +47,11 @@ class Task(JsonDeserializable):
         elif isinstance(steps, dict):
             self.steps = TaskManager.parse_steps(self.title, steps)
 
-        self.objects.setdefault(title, self)
-
         self.saver = UserStepSaver(f"{self.title}.save")
+
+    def add_user(self, user_id):
+        # self.saver.setdefault(user_id, 1)
+        self.saver[user_id] = 1
 
     @classmethod
     def de_json(cls, json_type):
@@ -44,6 +63,12 @@ class Task(JsonDeserializable):
                    json_type['number'],
                    json_type['steps'],
                    )
+
+    def do_step(self, user_id, *args, **kwargs):
+        step_number = self.saver[user_id]
+        step = self.steps[step_number]
+
+        step.do_step(user_id, *args, **kwargs)
 
     def end_task(self, user_id):
         self.saver[user_id] = "ended"
@@ -100,9 +125,10 @@ class SendMessageStep(Step):
         message = bot.send_message(user_id, self.message_text, parse_mode="HTML", reply_markup=keyboard)
         return message
 
-    def do_step(self, user_id):
+    def do_step(self, user_id, *args, **kwargs):
         """ sends message and moves user to the next step """
         message = self.send_message(user_id)
+        self._next_step(user_id)
         return message
 
 
@@ -123,6 +149,11 @@ class ReceiveMessageStep(Step):
         return cls(json_type["text_to_equal"],
                    *args
                    )
+
+    def do_step(self, user_id, message: types.Message) -> None:
+        """ sends message and moves user to the next step """
+        if message == self.text_to_equal:
+            self._next_step(user_id)
 
 
 class TaskManager:
@@ -147,6 +178,7 @@ class TaskManager:
         steps_dict = StepsDict({})
         for number, step in steps.items():
             action = step["action"]
+            number = int(number)
             if action == "send_message":
                 steps_dict[number] = SendMessageStep.de_json(step, task, number)
             elif action == "receive_message":
@@ -155,16 +187,20 @@ class TaskManager:
         return steps_dict
 
     def add_task(self, task_json: dict) -> Task:
-        # condition = task_json["condition"]
-        # number = task_json["number"]
+        condition = task_json["condition"]
+        number = task_json["number"]
         title = task_json["title"]
-        # steps = TaskManager.parse_steps(title, task_json["steps"])
-        #
-        # task = Task(title, condition, number, steps)
-        task = Task.de_json(task_json)
+
+        task = Task(title, condition, number, None)
+        # task = Task.de_json(task_json)
         self.tasks[title] = task
+        steps = TaskManager.parse_steps(title, task_json["steps"])
+        task.steps = steps
         return task
 
     def from_file(self, filename: str) -> Task:
         read_file = TaskManager.parse_json_file(filename)
         return self.add_task(read_file["task"])
+
+    def get_task(self, task_name):
+        return self.tasks[task_name]

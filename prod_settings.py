@@ -13,3 +13,5 @@ TOKEN = "<your token>"
 SECRET_KEY = '<your SECRET_KEY>' # django SECRET_KEY
 
 DOMAIN = 'my_domain'
+
+TASKS_DIR = os.path.join(BASE_DIR, "bot",  "dialogs")

@@ -1,6 +1,4 @@
 import os
-import time
-import telebot
 import sys
 
 from django.views import View
@@ -9,6 +7,7 @@ from django.http import HttpResponse
 from bot_trainer.settings import BASE_DIR, DOMAIN
 
 from bot.bot import bot
+import bot.bot_configuring
 from bot.bot import *
 from bot.commands import *
 

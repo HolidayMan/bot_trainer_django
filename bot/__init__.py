@@ -27,15 +27,22 @@ class Saver:
         except FileNotFoundError:
             self._data = {}
 
+    def __delitem__(self, key):
+        self._data.pop(key)
+
     def __del__(self):
         self.save()
 
 
 class SaverDict(Saver):
+
     _data = {}
 
+    def __init__(self):
+        super().__init__()
+
     def __iter__(self):
-        return iter(self._data.values())
+        return iter(self._data.keys())
 
     def __setitem__(self, key, value):
         self._data[key] = value
@@ -60,8 +67,16 @@ class UserTaskSaver(SaverDict):
         if cls.object:
             return cls.object
         else:
-            cls.object = super().__new__(cls, *args, *kwargs)
+            object = super().__new__(cls, *args, *kwargs)
+            # object.__init__()
+            cls.object = object
             return cls.object
+
+    def __init__(self):
+        if self.object:
+            self._data = self.object._data
+        else:
+            super().__init__()
 
 
 class UserStepSaver(SaverDict):
