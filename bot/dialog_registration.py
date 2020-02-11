@@ -1,7 +1,8 @@
-# import json
+import json
 # from abc import ABC, abstractmethod
 from telebot import types
 from .bot import bot
+from bot import UserStepSaver
 
 
 class JsonDeserializable:
@@ -15,12 +16,14 @@ class JsonDeserializable:
 class Task(JsonDeserializable):
     objects = {}
 
-    def __init__(self, title, condition, number, steps):
+    def __init__(self, title: str, condition: str, number: int, steps: dict) -> None:
         self.title = title
         self.condition = condition
         self.number = number
         self.steps = steps
         self.objects.setdefault(title, self)
+
+        self.saver = UserStepSaver(f"{self.title}.save")
 
     @classmethod
     def de_json(cls, json_type):
@@ -33,18 +36,28 @@ class Task(JsonDeserializable):
                    json_type['steps'],
                    )
 
+    def end_task(self, user_id):
+        self.saver[user_id] = "ended"
+
 
 class Step(JsonDeserializable):
     action = None
 
+    def __init__(self, task, number):
+        self.task = TaskManager.tasks[task]
+        self.number = number
+
     @classmethod
     def de_json(cls, json_type):
-        if not isinstance(json_type, dict):
-            raise TypeError("json_type must be an instance of dict")
+        # if not isinstance(json_type, dict):
+        #     raise TypeError("json_type must be an instance of dict")
 
         raise NotImplementedError
 
-    def do_step(self):
+    def _next_step(self, user_id):
+        self.task.saver[user_id] += 1
+
+    def do_step(self, *args, **kwargs):
         pass
 
 
@@ -53,17 +66,19 @@ class SendMessageStep(Step):
 
     action = "send_message"
 
-    def __init__(self, message_text, buttons=None):
+    def __init__(self, message_text, buttons=None, *args):
+        super().__init__(*args)
         self.message_text = message_text
         self.buttons = buttons
 
     @classmethod
-    def de_json(cls, json_type):
+    def de_json(cls, json_type, *args):
         if not isinstance(json_type, dict):
             raise TypeError("json_type must be an instance of dict")
 
         return cls(json_type["message_text"],
-                   json_type.get("buttons")
+                   json_type.get("buttons"),
+                   *args
                    )
 
     def send_message(self, user_id):
@@ -76,7 +91,10 @@ class SendMessageStep(Step):
         message = bot.send_message(user_id, self.message_text, parse_mode="HTML", reply_markup=keyboard)
         return message
 
-    # def do_step(self):
+    def do_step(self, user_id):
+        """ sends message and moves user to the next step """
+        message = self.send_message(user_id)
+        return message
 
 
 class ReceiveMessageStep(Step):
@@ -84,12 +102,59 @@ class ReceiveMessageStep(Step):
 
     action = "receive_message"
 
-    def __init__(self, text_to_equal):
+    def __init__(self, text_to_equal, *args):
+        super().__init__(*args)
         self.text_to_equal = text_to_equal
 
     @classmethod
-    def de_json(cls, json_type):
+    def de_json(cls, json_type, *args):
         if not isinstance(json_type, dict):
             raise TypeError("json_type must be an instance of dict")
 
-        return cls(json_type["text_to_equal"])
+        return cls(json_type["text_to_equal"],
+                   *args
+                   )
+
+
+class TaskManager:
+    tasks = {}
+
+    object = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.object:
+            return cls.object
+        else:
+            cls.object = super().__new__(cls, *args, *kwargs)
+            return cls.object
+
+    @staticmethod
+    def parse_json_file(json_file: str) -> dict:
+        with open(json_file) as file:
+            return json.load(file)
+
+    @staticmethod
+    def parse_steps(task: str, steps: dict) -> dict:
+        steps_dict = {}
+        for number, step in steps.items():
+            action = step["action"]
+            if action == "send_message":
+                steps_dict[number] = SendMessageStep.de_json(step, task, number)
+            elif action == "receive_message":
+                steps_dict[number] = ReceiveMessageStep.de_json(step, task, number)
+
+        return steps_dict
+
+    def add_task(self, task_json: dict) -> Task:
+        condition = task_json["condition"]
+        number = task_json["number"]
+        title = task_json["title"]
+        steps = TaskManager.parse_steps(title, task_json["steps"])
+
+        task = Task(title, condition, number, steps)
+        self.tasks[title] = task
+        return task
+
+    def from_file(self, filename: str) -> Task:
+        read_file = TaskManager.parse_json_file(filename)
+        return self.add_task(read_file["task"])

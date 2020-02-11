@@ -1,6 +1,7 @@
 {
-    "Task1": {
+    "task": {
         "condition": "Some options",
+        "title": "Task1",
         "number": 1,
         "steps": {
             "1": {

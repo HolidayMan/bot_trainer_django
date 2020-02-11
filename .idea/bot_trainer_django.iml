@@ -7,7 +7,4 @@
     <orderEntry type="jdk" jdkName="Python 3.7 (bot_trainer_django)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
-  <component name="PyDocumentationSettings">
-    <option name="myDocStringFormat" value="Plain" />
-  </component>
 </module>
