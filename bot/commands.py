@@ -2,6 +2,7 @@ from bot import UserTaskSaver
 from .bot import bot
 from .dialog_registration import TASKS_MANAGER
 
+
 @bot.message_handler(commands=['start'])
 def cmd_start(message):
     title = "Task1"

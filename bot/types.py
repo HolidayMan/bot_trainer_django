@@ -31,9 +31,10 @@ class StepWorker:
             except KeyError:
                 task.end_task(user_id)
                 break
-        if task.saver[user_id] == "ended":
+        if task.saver[user_id] == -1:
             user_task = UserTaskSaver()
             del user_task[user_id]
+            task.delete_user(user_id)
 
 
 class Task(JsonDeserializable):
@@ -64,14 +65,18 @@ class Task(JsonDeserializable):
                    json_type['steps'],
                    )
 
+    def delete_user(self, user_id):
+        del self.saver[user_id]
+
     def do_step(self, user_id, *args, **kwargs):
         step_number = self.saver[user_id]
+
         step = self.steps[step_number]
 
         step.do_step(user_id, *args, **kwargs)
 
     def end_task(self, user_id):
-        self.saver[user_id] = "ended"
+        self.saver[user_id] = -1
 
 
 class Step(JsonDeserializable):
