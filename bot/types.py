@@ -14,7 +14,6 @@ class MetaStep(type):
     def __new__(mcs, name, bases, dct):
         # noinspection PyTypeChecker
         cls_obj: Step = super().__new__(mcs, name, bases, dct)
-        print(name)
         action_name = cls_obj.action
         mcs.action_step[action_name] = cls_obj
         cls_obj.action_step = mcs.action_step
