@@ -1,5 +1,5 @@
 from .bot import bot
-from bot import UserTaskSaver
+from .savers import UserTaskSaver, SaverDict
 from bot.dialog_registration import TASKS_MANAGER
 from bot.types import StepWorker
 

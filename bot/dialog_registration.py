@@ -1,4 +1,5 @@
 import os
+
 from bot_trainer.settings import TASKS_DIR
 from .types import TaskManager
 

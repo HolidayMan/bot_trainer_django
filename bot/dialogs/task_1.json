@@ -10,7 +10,7 @@
                 "buttons":  ["Hello", "Yes"]
             },
             "2": {
-                "action": "receive_message",
+                "action": "receive_and_save_message",
                 "text_to_equal": "Yes"
             },
             "3": {

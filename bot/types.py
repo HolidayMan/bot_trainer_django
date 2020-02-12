@@ -4,19 +4,24 @@ from typing import Union
 from telebot import types
 
 from .bot import bot
-from bot import UserStepSaver, UserTaskSaver
-
-BLOCKING_ACTIONS = ("receive_message")
+from .savers import UserStepSaver, UserTaskSaver
 
 
 class MetaStep(type):
     action_step = {}
+    blocking_actions = []
 
     def __new__(mcs, name, bases, dct):
-        cls_obj = super().__new__(mcs, name, bases, dct)
-        action_name = dct["action"]
+        # noinspection PyTypeChecker
+        cls_obj: Step = super().__new__(mcs, name, bases, dct)
+        print(name)
+        action_name = cls_obj.action
         mcs.action_step[action_name] = cls_obj
         cls_obj.action_step = mcs.action_step
+
+        if cls_obj.is_blocking:
+            mcs.blocking_actions.append(cls_obj.action)
+
         return cls_obj
 
 
@@ -36,7 +41,7 @@ class StepWorker:
         """ steps execution always start with blocking action """
         task.do_step(user_id, *args, **kwargs)
         step = task.steps[task.saver[user_id]]
-        while step.action not in BLOCKING_ACTIONS:
+        while step.action not in MetaStep.blocking_actions:
             task.do_step(user_id, *args, **kwargs)
             try:
                 step = task.steps[task.saver[user_id]]
@@ -93,6 +98,7 @@ class Task(JsonDeserializable):
 
 class Step(JsonDeserializable, metaclass=MetaStep):
     action = None
+    is_blocking = False
 
     def __init__(self, task, number):
         self.task = TaskManager.tasks[task]
@@ -153,6 +159,7 @@ class ReceiveMessageStep(Step):
     """ implements receive_message action """
 
     action = "receive_message"
+    is_blocking = True
 
     def __init__(self, text_to_equal, *args):
         super().__init__(*args)
@@ -167,9 +174,11 @@ class ReceiveMessageStep(Step):
                    *args
                    )
 
-    def do_step(self, user_id, message: types.Message) -> None:
+    def do_step(self, user_id, message: types.Message, *args, **kwargs) -> bool:
         if message == self.text_to_equal:
             self._next_step(user_id)
+            return True
+        return False
 
 
 class SendPhotoStep(Step):
@@ -245,7 +254,6 @@ class TaskManager:
         title = task_json["title"]
 
         task = Task(title, condition, number, None)
-        # task = Task.de_json(task_json)
         self.tasks[title] = task
         steps = TaskManager.parse_steps(title, task_json["steps"])
         task.steps = steps

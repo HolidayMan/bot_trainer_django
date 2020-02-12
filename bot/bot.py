@@ -17,4 +17,3 @@ class TeleBot(telebot.TeleBot):
 
 
 bot = TeleBot(TOKEN)
-
