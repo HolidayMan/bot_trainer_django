@@ -6,7 +6,8 @@
         "steps": {
             "1": {
                 "action": "send_message",
-                "message_text": "Algorithm 1"
+                "message_text": "<b>Algorithm</b> 1",
+                "buttons":  ["Hello", "Yes"]
             },
             "2": {
                 "action": "receive_message",
@@ -14,7 +15,7 @@
             },
             "3": {
                 "action": "send_message",
-                "message_text": "The end"
+                "message_text": "<i>The</i> end"
             }
         }
     }

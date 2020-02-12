@@ -9,6 +9,12 @@ class TeleBot(telebot.TeleBot):
         self._notify_command_handlers(self.message_handlers, new_messages)
         self.__notify_update(new_messages)
 
+    def _exec_task(self, task, *args, **kwargs):
+        # if self.threaded:
+        #     self.worker_pool.put(task, *args, **kwargs)
+        # else:
+        task(*args, **kwargs)
 
-bot = TeleBot(TOKEN, threaded=False)
+
+bot = TeleBot(TOKEN)
 
