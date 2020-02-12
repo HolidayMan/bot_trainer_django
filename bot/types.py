@@ -8,6 +8,18 @@ from bot import UserStepSaver, UserTaskSaver
 
 BLOCKING_ACTIONS = ("receive_message")
 
+
+class MetaStep(type):
+    action_step = {}
+
+    def __new__(mcs, name, bases, dct):
+        cls_obj = super().__new__(mcs, name, bases, dct)
+        action_name = dct["action"]
+        mcs.action_step[action_name] = cls_obj
+        cls_obj.action_step = mcs.action_step
+        return cls_obj
+
+
 class JsonDeserializable:
     @classmethod
     def de_json(cls, json_type):
@@ -79,7 +91,7 @@ class Task(JsonDeserializable):
         self.saver[user_id] = -1
 
 
-class Step(JsonDeserializable):
+class Step(JsonDeserializable, metaclass=MetaStep):
     action = None
 
     def __init__(self, task, number):
@@ -97,7 +109,7 @@ class Step(JsonDeserializable):
         self.task.saver[user_id] += 1
 
     def do_step(self, *args, **kwargs):
-        pass
+        raise NotImplementedError
 
 
 class SendMessageStep(Step):
@@ -184,10 +196,7 @@ class TaskManager:
         for number, step in steps.items():
             action = step["action"]
             number = int(number)
-            if action == "send_message":
-                steps_dict[number] = SendMessageStep.de_json(step, task, number)
-            elif action == "receive_message":
-                steps_dict[number] = ReceiveMessageStep.de_json(step, task, number)
+            steps_dict[number] = Step.action_step[action].de_json(step, task, number)
 
         return steps_dict
 
