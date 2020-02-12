@@ -109,6 +109,7 @@ class Step(JsonDeserializable, metaclass=MetaStep):
         self.task.saver[user_id] += 1
 
     def do_step(self, *args, **kwargs):
+        """ sends message and moves user to the next step """
         raise NotImplementedError
 
 
@@ -143,7 +144,6 @@ class SendMessageStep(Step):
         return message
 
     def do_step(self, user_id, *args, **kwargs):
-        """ sends message and moves user to the next step """
         message = self.send_message(user_id)
         self._next_step(user_id)
         return message
@@ -168,9 +168,48 @@ class ReceiveMessageStep(Step):
                    )
 
     def do_step(self, user_id, message: types.Message) -> None:
-        """ sends message and moves user to the next step """
         if message == self.text_to_equal:
             self._next_step(user_id)
+
+
+class SendPhotoStep(Step):
+    """ implements send_photo action """
+
+    action = "send_photo"
+
+    def __init__(self, path: str, text: str = None, buttons: list = None, *args):
+        super().__init__(*args)
+        self.path = path
+        self.text = text
+        self.buttons = buttons
+
+    def read_file(self):
+        with open(self.path, "rb") as f:
+            return f.read()
+
+    @classmethod
+    def de_json(cls, json_type, *args):
+        if not isinstance(json_type, dict):
+            raise TypeError("json_type must be an instance of dict")
+
+        return cls(json_type["path"],
+                   json_type.get("text"),
+                   json_type.get("buttons"),
+                   *args
+                   )
+
+    def send_photo(self, user_id):
+        if self.buttons:
+            keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+            keyboard.add(*self.buttons)
+        else:
+            keyboard = types.ReplyKeyboardRemove()
+        return bot.send_photo(user_id, self.read_file(), self.text, reply_markup=keyboard, parse_mode="HTML")
+
+    def do_step(self, user_id, *args, **kwargs):
+        message = self.send_photo(user_id)
+        self._next_step(user_id)
+        return message
 
 
 class TaskManager:
