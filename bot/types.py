@@ -17,7 +17,6 @@ class MetaStep(type):
         action_name = cls_obj.action
         mcs.action_step[action_name] = cls_obj
         cls_obj.action_step = mcs.action_step
-
         if cls_obj.is_blocking:
             mcs.blocking_actions.append(cls_obj.action)
 
@@ -38,10 +37,11 @@ class StepWorker:
     @staticmethod
     def do_steps(task, user_id, *args, **kwargs):
         """ steps execution always start with blocking action """
-        task.do_step(user_id, *args, **kwargs)
+        args = [task.do_step(user_id, *args, **kwargs)]
         step = task.steps[task.saver[user_id]]
         while step.action not in MetaStep.blocking_actions:
-            task.do_step(user_id, *args, **kwargs)
+            print("DOING STEP")
+            args = [task.do_step(user_id, *args, **kwargs)]
             try:
                 step = task.steps[task.saver[user_id]]
             except KeyError:
@@ -89,7 +89,7 @@ class Task(JsonDeserializable):
 
         step = self.steps[step_number]
 
-        step.do_step(user_id, *args, **kwargs)
+        return step.do_step(user_id, *args, **kwargs)
 
     def end_task(self, user_id):
         self.saver[user_id] = -1

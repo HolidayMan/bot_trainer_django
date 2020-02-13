@@ -10,6 +10,11 @@ from bot_trainer.settings import BASE_DIR, DOMAIN
 # from bot.bot import bot
 # import bot.bot_configuring
 # from bot.commands import *
+
+import bot.types
+import bot.man_types
+import bot.commands
+import bot.bot_configuring
 from bot.bot import bot
 
 WEBHOOK_SSL_CERT = os.path.join(BASE_DIR, 'webhook_cert.pem')

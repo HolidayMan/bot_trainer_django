@@ -16,6 +16,8 @@ class TgUser(models.Model):
 
 class Project(models.Model):
     title = models.CharField(max_length=256, blank=True)
+    manager_name = models.CharField(max_length=256, blank=True)
+    goal = models.CharField(max_length=256, blank=True)
     date_start = models.DateField(auto_now_add=True)
     date_end = models.DateField(blank=True)
     completed = models.BooleanField(default=False)

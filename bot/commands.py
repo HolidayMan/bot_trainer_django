@@ -1,10 +1,22 @@
 from .savers import UserTaskSaver
 from .bot import bot
 from .dialog_registration import TASKS_MANAGER
+from .models import TgUser
+
+
+def user_exists(message):
+    return TgUser.objects.filter(tg_id=message.chat.id).exists()
 
 
 @bot.message_handler(commands=['start'])
 def cmd_start(message):
+    if not user_exists(message):
+        new_user = TgUser(tg_id=message.chat.id)
+        if message.chat.username:
+            new_user.username = message.chat.username
+        if message.chat.first_name:
+            new_user.first_name = message.chat.first_name
+        new_user.save()
     title = "Task1"
     user_tasks = UserTaskSaver()
     user_tasks[message.chat.id] = title

@@ -14,11 +14,14 @@
                 "text_to_equal": "Yes"
             },
             "3": {
+                "action": "save_project"
+            },
+            "4": {
                 "action": "send_photo",
                 "path": "./photos/2.jpg",
                 "text": "It's a photo (really?)"
             },
-            "4": {
+            "5": {
                 "action": "send_message",
                 "message_text": "<i>The</i> end"
             }
