@@ -34,6 +34,7 @@ class ReceiveSaveMessageStep(ReceiveMessageStep):
         self.message_builder = MessageBuilder(MessageSaver(filename))
 
     def do_step(self, user_id, message, *args, **kwargs):
+        next_step = self.task.steps[self.number+1]
         if super().do_step(user_id, message):
             built_message = self.message_builder.build_message(user_id)
             print(built_message)  # TODO: here must be saving to DB
