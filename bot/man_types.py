@@ -43,7 +43,6 @@ class ReceiveSaveMessageStep(ReceiveMessageStep):
         if super().do_step(user_id, message):
             messages = self.message_builder.get_unbuilt_message(user_id)
             self.message_builder.clear_message(user_id)
-            print("MESSSSSSSSSSSAGES", messages)
             return messages
         else:
             self.message_builder.add_message(user_id, message)
@@ -57,7 +56,6 @@ class SaveProjectStep(Step):
         return cls(*args, **kwargs)
 
     def do_step(self, user_id, messages: list, *args, **kwargs):
-        print("MESSSSSSSSSSSSAGES IN SAVEPROJECT", messages)
         user = TgUser.objects.get(tg_id=user_id)
         title, manager_name, goal, date_end = messages
         date = datetime.datetime.strptime(date_end, "%d.%m.%Y").date()

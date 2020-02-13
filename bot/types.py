@@ -40,7 +40,6 @@ class StepWorker:
         args = [task.do_step(user_id, *args, **kwargs)]
         step = task.steps[task.saver[user_id]]
         while step.action not in MetaStep.blocking_actions:
-            print("DOING STEP")
             args = [task.do_step(user_id, *args, **kwargs)]
             try:
                 step = task.steps[task.saver[user_id]]
