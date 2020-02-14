@@ -219,6 +219,18 @@ class SendPhotoStep(Step):
         return message
 
 
+class ReceivePhotoStep(Step):
+    action = "receive_photo"
+    is_blocking = True
+
+    @classmethod
+    def de_json(cls, json_type, *args, **kwargs):
+        return cls(*args, **kwargs)
+
+    def do_step(self, user_id, *args, **kwargs):
+        self._next_step(user_id)
+
+
 class TaskManager:
     tasks = {}
 

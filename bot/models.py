@@ -35,12 +35,14 @@ class Task(models.Model):
     project = models.ForeignKey("Project", related_name="tasks", on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.header
+        return self.title
 
 
 class Performer(models.Model):
     name = models.CharField(max_length=256)
-    task = models.ForeignKey("Task", related_name="performers", on_delete=models.CASCADE)
+    description = models.CharField(max_length=1024, blank=True)
+    project = models.ForeignKey("Project", related_name="performers", on_delete=models.CASCADE)
+    tasks = models.ManyToManyField("Task", related_name="performers")
     user = models.ForeignKey("TgUser", on_delete=models.CASCADE, related_name="performers")
 
     def __str__(self):

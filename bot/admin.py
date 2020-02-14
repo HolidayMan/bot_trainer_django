@@ -14,15 +14,21 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "date_start", "duration", "performers")
+    list_display = ("id", "title", "date_start", "duration", "display_performers")
 
-    def performers(self, obj):
+    def display_performers(self, obj):
         return " ,".join(performer.name for performer in obj.performers.all())
+    display_performers.short_description = "Related performers"
 
 
 @admin.register(Performer)
 class PerformerAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "task", "user")
+    list_display = ("id", "name", "description", "display_tasks", "project")
+
+    def display_tasks(self, obj):
+        return " ,".join(task.title for task in obj.tasks.all())
+
+    display_tasks.short_description = "Related tasks"
 
 
 @admin.register(Goal)
