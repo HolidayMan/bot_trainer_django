@@ -2,7 +2,7 @@ import datetime
 
 from .types import ReceiveMessageStep, Step
 from .savers import SaverDict
-from .models import Project, TgUser
+from .models import Project, TgUser, Goal
 
 
 class MessageBuilder:
@@ -28,6 +28,28 @@ class MessageSaver(SaverDict):
     def __init__(self, filename):
         self.filename = filename
         super().__init__()
+
+
+class UserProjectSaver(SaverDict):
+    filename = "user_projectid.save"
+
+    object = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.object:
+            return cls.object
+        else:
+            obj = super().__new__(cls, *args, *kwargs)
+            obj.__init__()
+            cls.object = obj
+            return cls.object
+
+    def __init__(self):
+        if self.object:
+            self._data = self.object._data
+            self.timer = self.get_save_timer()
+        else:
+            super().__init__()
 
 
 class ReceiveSaveMessageStep(ReceiveMessageStep):
@@ -57,8 +79,8 @@ class SaveProjectStep(Step):
 
     def do_step(self, user_id, messages: list, *args, **kwargs):
         user = TgUser.objects.get(tg_id=user_id)
-        title, manager_name, goal, date_end = messages
-        date = datetime.datetime.strptime(date_end, "%d.%m.%Y").date()
+        title, manager_name, goal, date_end = messages  # TODO: checking for messages length
+        date = datetime.datetime.strptime(date_end, "%d.%m.%Y").date()  # TODO: checking for valid date
         new_project = Project()
         new_project.title = title
         new_project.manager_name = manager_name
@@ -66,5 +88,21 @@ class SaveProjectStep(Step):
         new_project.date_end = date
         new_project.user = user
         new_project.save()
+        UserProjectSaver()[user_id] = new_project.id
+        super()._next_step(user_id)
+
+
+class SaveGoals(Step):
+    action = "save_goals"
+
+    @classmethod
+    def de_json(cls, json_type, *args, **kwargs):
+        return cls(*args, **kwargs)
+
+    def do_step(self, user_id, messages: list, *args, **kwargs):
+        project = Project.objects.get(id=UserProjectSaver()[user_id])
+        goals = [Goal.objects.create(title=title, project=project) for title in messages]
+        project.goals.add(*goals)
+        project.save()
         super()._next_step(user_id)
 

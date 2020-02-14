@@ -23,3 +23,8 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(Performer)
 class PerformerAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "task", "user")
+
+
+@admin.register(Goal)
+class GoalAdmin(admin.ModelAdmin):
+    list_display = ("id", "title", "project")

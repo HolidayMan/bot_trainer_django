@@ -45,3 +45,11 @@ class Performer(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Goal(models.Model):
+    title = models.CharField(max_length=256)
+    project = models.ForeignKey("Project", related_name="goals", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
