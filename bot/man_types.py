@@ -6,6 +6,8 @@ from .types import ReceiveMessageStep, Step, SendMessageStep
 from .savers import SaverDict
 from .models import Project, TgUser, Goal, Performer, Task
 
+from .build_diagram import generate_diagram
+
 
 class MessageBuilder:
     def __init__(self, message_saver):
@@ -216,4 +218,27 @@ class AddPerformerToTaskStep(Step):
         task = Task.objects.get(id=UserNewTaskSaver()[user_id])
         task.performers.add(AddPerformerToTaskStep.get_performers(user_id, message))
         task.save()
+        super()._next_step(user_id)
+
+
+class BuildAndSendGantt(Step):
+    action = "build_and_send_gantt_diagram"
+
+    @staticmethod
+    def read_file(path):
+        with open(path, "rb") as f:
+            return f.read()
+
+    @classmethod
+    def de_json(cls, json_type, *args, **kwargs):
+        return cls(*args, **kwargs)
+
+    @staticmethod
+    def send_photo(user_id, path):
+        return bot.send_photo(user_id, BuildAndSendGantt.read_file(path), parse_mode="HTML")
+
+    def do_step(self, user_id, *args, **kwargs):
+        project = Project.objects.get(id=UserProjectSaver()[user_id])
+        path = generate_diagram(project)
+        BuildAndSendGantt.send_photo(user_id, path)
         super()._next_step(user_id)

@@ -113,6 +113,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# user settings
+TMP_PATH = os.path.join(BASE_DIR, "tmp")
+if not os.path.exists(TMP_PATH):
+    os.mkdir(TMP_PATH)
 try:
     from local_settings import *
     print("[*] using local_settings")
