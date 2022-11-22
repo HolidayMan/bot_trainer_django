@@ -17,7 +17,7 @@ lazy-object-proxy==1.4.3
 lxml==4.5.0
 mccabe==0.6.1
 od==1.0
-Pillow==7.0.0
+Pillow==9.3.0
 pycparser==2.19
 pylint==2.4.4
 pyOpenSSL==19.1.0
